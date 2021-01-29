@@ -39,9 +39,35 @@ class MyClient(discord.Client):
             if self.u is not None:
                 guess = None
                 q = self.u.get_question
-                await message.channel.send(f'Category: ||{q[4]}||')
-                await message.channel.send(f'Dollar amount: {q[5]}')
+                if q[3] == 'Final Jeopardy!':
+                    await message.channel.send(f'Final Jeopardy Category: ||{q[4]}||')
+                    await message.channel.send(f'Your current show winnings are: {self.u.show_winnings}')
+                    await message.channel.send('Place your wager now')
+
+                    def check_wager(m):
+                        return m.author == message.author
+
+                    while True:
+                        wager = await self.wait_for('message', check=check_wager)
+                        try:
+                            if 0 <= int(wager.content) <= max(int(self.u.show_winnings), 1000):
+                                break
+                            else:
+                                await message.channel.send('Invalid wager, try again')
+                        except ValueError:
+                            await message.channel.send('Invalid, your wager should be an integer, try again')
+                    winnings = int(wager.content)
+                    await message.channel.send('Your Final Jeopardy clue:')
+
+                else:
+                    await message.channel.send(f'Category: ||{q[4]}||')
+                    await message.channel.send(f'Dollar amount: {q[5]}')
+                    winnings = int(q[5].replace('$', ''))
+
+                # The question being asked here
                 await message.channel.send(f'||{q[6]}||')
+
+                # Setting the correct answer, then taking the guess and comparing
                 answer = q[7]
                 try:
                     guess = await self.wait_for('message', timeout=120.0)
@@ -49,7 +75,7 @@ class MyClient(discord.Client):
                     await message.channel.purge(limit=1)
                 except asyncio.TimeoutError:
                     self.u.update_record(question=q[6], answer=answer, guess=guess, clue_id=q[0], show_id=q[1],
-                                         jep_round=q[3], cash=-int(q[5].replace('$', '')))
+                                         jep_round=q[3], cash=-winnings)
                     return await message.channel.send(f"Time's up, the correct answer is ||{answer}||")
 
                 def check_answer(g, a):
@@ -64,11 +90,11 @@ class MyClient(discord.Client):
                 if result:
                     await message.channel.send('Correct!')
                     self.u.update_record(question=q[6], answer=answer, guess=guess.content, clue_id=q[0], show_id=q[1],
-                                         jep_round=q[3], cash=int(q[5].replace('$', '')))
+                                         jep_round=q[3], cash=winnings)
                 else:
                     await message.channel.send(f'Wrong, the correct answer is ||{answer}||')
                     self.u.update_record(question=q[6], answer=answer, guess=guess.content, clue_id=q[0], show_id=q[1],
-                                         jep_round=q[3], cash=-int(q[5].replace('$', '')))
+                                         jep_round=q[3], cash=-winnings)
 
             else:
                 await message.channel.send('Please use $load to load your user data first')
@@ -93,10 +119,17 @@ class MyClient(discord.Client):
             else:
                 await message.channel.send('Please use $load to load your user data first')
 
+        # Lists all commands
+        if message.content.startswith('$help'):
+            await message.channel.send('List of commands: ')
+            await message.channel.send('$load - Loads user data, use this to load your session')
+            await message.channel.send('$ask - Asks a question, you only have 120 seconds to answer so be ready!')
+            await message.channel.send('$winnings - Check your winnings, both lifetime and for the show')
+            await message.channel.send('$dispute - If you think your answer should be correct, this will trigger a manual review')
+
         # Debug
         if message.content.startswith('$test'):
-            await message.channel.send(f'Name: {message.author.name}, ID: {message.author.id}')
-            await client.get_user(message.author.id).send("Test DM")
+            await message.channel.send('Hello')
 
 
 intents = discord.Intents.default()
