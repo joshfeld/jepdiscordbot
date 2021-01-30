@@ -3,7 +3,9 @@ import discord
 import asyncio
 from dotenv import load_dotenv
 
+import check_answer
 from user import User
+from check_answer import validation
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -78,14 +80,10 @@ class MyClient(discord.Client):
                                          jep_round=q[3], cash=-winnings)
                     return await message.channel.send(f"Time's up, the correct answer is ||{answer}||")
 
-                def check_answer(g, a):
-                    prefix = ['what is ', 'who is ', 'where is ']
-                    for ans in prefix:
-                        if g.lower() == ans + a.lower():
-                            return True
-                    return False
+                def check_response(g, a):
+                    return check_answer.validation(g, a)
 
-                result = check_answer(guess.content, answer)
+                result = check_response(guess.content, answer)
 
                 if result:
                     await message.channel.send('Correct!')
