@@ -44,6 +44,8 @@ def final_check(g, a):
         for ans in a:
             if fuzz.ratio(g.strip(), ans.strip()) > 80 or fuzz.token_set_ratio(g.strip(), ans.strip()) > 90:
                 return True
+    elif isinstance(a, bool) or isinstance(g, bool):
+        print(g, a)
     else:
         if fuzz.ratio(g.strip(), a.strip()) > 80 or fuzz.token_set_ratio(g.strip(), a.strip()) > 90:
             return True

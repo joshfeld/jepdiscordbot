@@ -38,7 +38,6 @@ class MyClient(discord.Client):
         # Asks the next question for the user, gathers the answer, then updates all info
         if message.content.startswith('$ask'):
             if self.u is not None:
-                guess = None
                 q = self.u.get_question
                 if q[3] == 'Final Jeopardy!':
                     await message.channel.send(f'Final Jeopardy Category: ||{q[4]}||')
@@ -75,20 +74,30 @@ class MyClient(discord.Client):
                     await asyncio.sleep(0.5)
                     await message.channel.purge(limit=1)
                 except asyncio.TimeoutError:
-                    self.u.update_record(question=q[6], answer=answer, guess=guess, clue_id=q[0], show_id=q[1],
-                                         jep_round=q[3], cash=0)
+                    if q[3] != 'Final Jeopardy!':
+                        self.u.update_record(question=q[6], answer=answer, guess="No guess", clue_id=q[0], show_id=q[1],
+                                             jep_round=q[3], cash=0)
+                    else:
+                        self.u.update_record(question=q[6], answer=answer, guess="No guess", clue_id=q[0], show_id=q[1],
+                                             jep_round=q[3], cash=-winnings)
                     return await message.channel.send(f"Time's up, the correct answer is ||{answer}||")
 
-                result = check_answer.validation(guess.content, answer)
-
-                if result:
-                    await message.channel.send('Correct!')
-                    self.u.update_record(question=q[6], answer=answer, guess=guess.content, clue_id=q[0], show_id=q[1],
-                                         jep_round=q[3], cash=winnings)
+                # Allow user to skip the question for no gain or loss without waiting the 2 minutes
+                if guess.content in ['skip', 'pass'] and q[3] != 'Final Jeopardy!':
+                    self.u.update_record(question=q[6], answer=answer, guess="No guess", clue_id=q[0], show_id=q[1],
+                                         jep_round=q[3], cash=0)
+                    return await message.channel.send(f"Question skipped, the correct answer is ||{answer}||")
                 else:
-                    await message.channel.send(f'Wrong, the correct answer is ||{answer}||')
-                    self.u.update_record(question=q[6], answer=answer, guess=guess.content, clue_id=q[0], show_id=q[1],
-                                         jep_round=q[3], cash=-winnings)
+                    result = check_answer.validation(guess.content, answer)
+
+                    if result:
+                        await message.channel.send('Correct!')
+                        self.u.update_record(question=q[6], answer=answer, guess=guess.content, clue_id=q[0], show_id=q[1],
+                                             jep_round=q[3], cash=winnings)
+                    else:
+                        await message.channel.send(f'Wrong, the correct answer is ||{answer}||')
+                        self.u.update_record(question=q[6], answer=answer, guess=guess.content, clue_id=q[0], show_id=q[1],
+                                             jep_round=q[3], cash=-winnings)
 
             else:
                 await message.channel.send('Please use $load to load your user data first')
@@ -120,6 +129,7 @@ class MyClient(discord.Client):
             await message.channel.send('$ask - Asks a question, you only have 120 seconds to answer so be ready!')
             await message.channel.send('$winnings - Check your winnings, both lifetime and for the show')
             await message.channel.send('$dispute - If you think your answer should be correct, this will trigger a manual review')
+            await message.channel.send('Remember, always answer in the form of a question!')
 
         # Debug
         if message.content.startswith('$test'):
