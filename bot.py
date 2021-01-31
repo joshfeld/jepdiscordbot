@@ -63,7 +63,7 @@ class MyClient(discord.Client):
                 else:
                     await message.channel.send(f'Category: ||{q[4]}||')
                     await message.channel.send(f'Dollar amount: {q[5]}')
-                    winnings = int(q[5].replace('$', ''))
+                    winnings = int(q[5].replace('$', '').replace(',', ''))
 
                 # The question being asked here
                 await message.channel.send(f'||{q[6]}||')
@@ -76,7 +76,7 @@ class MyClient(discord.Client):
                     await message.channel.purge(limit=1)
                 except asyncio.TimeoutError:
                     self.u.update_record(question=q[6], answer=answer, guess=guess, clue_id=q[0], show_id=q[1],
-                                         jep_round=q[3], cash=-winnings)
+                                         jep_round=q[3], cash=0)
                     return await message.channel.send(f"Time's up, the correct answer is ||{answer}||")
 
                 result = check_answer.validation(guess.content, answer)

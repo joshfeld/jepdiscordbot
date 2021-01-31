@@ -3,8 +3,8 @@ from fuzzywuzzy import fuzz
 
 def validation(g, a):
     while g:
-        g = g.lower()
-        a = a.lower()
+        g = str(g).lower()
+        a = str(a).lower()
         g, a = clean_chars(g, a)
         g = check_prefix(g)
         a = split_answer(a)
@@ -42,9 +42,9 @@ def split_answer(a):
 def final_check(g, a):
     if isinstance(a, list):
         for ans in a:
-            if fuzz.ratio(g, ans) > 80 or fuzz.token_set_ratio(g, ans) > 90:
+            if fuzz.ratio(g.strip(), ans.strip()) > 80 or fuzz.token_set_ratio(g.strip(), ans.strip()) > 90:
                 return True
     else:
-        if fuzz.ratio(g, a) > 80 or fuzz.token_set_ratio(g, a) > 90:
+        if fuzz.ratio(g.strip(), a.strip()) > 80 or fuzz.token_set_ratio(g.strip(), a.strip()) > 90:
             return True
     return False
