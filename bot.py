@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 
 import check_answer
 from user import User
-from check_answer import validation
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -80,10 +79,7 @@ class MyClient(discord.Client):
                                          jep_round=q[3], cash=-winnings)
                     return await message.channel.send(f"Time's up, the correct answer is ||{answer}||")
 
-                def check_response(g, a):
-                    return check_answer.validation(g, a)
-
-                result = check_response(guess.content, answer)
+                result = check_answer.validation(guess.content, answer)
 
                 if result:
                     await message.channel.send('Correct!')

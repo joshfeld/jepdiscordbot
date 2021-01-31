@@ -1,3 +1,4 @@
+from fuzzywuzzy import fuzz
 
 
 def validation(g, a):
@@ -24,8 +25,8 @@ def check_prefix(g):
 def clean_chars(g, a):
     g = g.translate({ord(i): None for i in "\"?!@#$%^&*()-_=+/\\[]{};:`~"})
     a = a.replace('&', 'and')
-    a = a.replace(' acceptable', '')
-    a = a.replace(' accepted', '')
+    a = a.replace(' acceptable)', '')
+    a = a.replace(' accepted)', '')
     a = a.translate({ord(i): None for i in "\"?!@#$%^&*)-_=+\\[]{};:`~"})
     return g, a
 
@@ -40,9 +41,10 @@ def split_answer(a):
 
 def final_check(g, a):
     if isinstance(a, list):
-        if g in a:
-            return True
+        for ans in a:
+            if fuzz.ratio(g, ans) > 80 or fuzz.token_set_ratio(g, ans) > 90:
+                return True
     else:
-        if g == a:
+        if fuzz.ratio(g, a) > 80 or fuzz.token_set_ratio(g, a) > 90:
             return True
     return False
