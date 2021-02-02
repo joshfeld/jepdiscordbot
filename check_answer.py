@@ -15,7 +15,7 @@ def validation(g, a):
 
 
 def check_prefix(g):
-    prefix = ['what is ', 'who is ', 'where is ']
+    prefix = ['what is ', 'who is ', 'where is ', 'what are ', 'who are ', 'where are ']
     for ans in prefix:
         if g.lower().startswith(ans):
             return g.replace(ans, '')
@@ -40,12 +40,14 @@ def split_answer(a):
 
 
 def final_check(g, a):
-    if isinstance(a, list):
+    if isinstance(g, bool):
+        return False
+    elif isinstance(a, list):
         for ans in a:
             if fuzz.ratio(g.strip(), ans.strip()) > 80 or fuzz.token_set_ratio(g.strip(), ans.strip()) > 90:
                 return True
-    elif isinstance(a, bool) or isinstance(g, bool):
-        print(g, a)
+    elif isinstance(g, bool):
+        return False
     else:
         if fuzz.ratio(g.strip(), a.strip()) > 80 or fuzz.token_set_ratio(g.strip(), a.strip()) > 90:
             return True

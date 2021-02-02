@@ -1,6 +1,7 @@
 import os
 import discord
 import asyncio
+import textwrap
 from dotenv import load_dotenv
 
 import check_answer
@@ -70,6 +71,7 @@ class MyClient(discord.Client):
                 # Setting the correct answer, then taking the guess and comparing
                 answer = q[7]
                 try:
+                    await asyncio.sleep(0.5)
                     guess = await self.wait_for('message', timeout=120.0)
                     await asyncio.sleep(0.5)
                     await message.channel.purge(limit=1)
@@ -124,16 +126,22 @@ class MyClient(discord.Client):
 
         # Lists all commands
         if message.content.startswith('$help'):
-            await message.channel.send('List of commands: ')
-            await message.channel.send('$load - Loads user data, use this to load your session')
-            await message.channel.send('$ask - Asks a question, you only have 120 seconds to answer so be ready!')
-            await message.channel.send('$winnings - Check your winnings, both lifetime and for the show')
-            await message.channel.send('$dispute - If you think your answer should be correct, this will trigger a manual review')
-            await message.channel.send('Remember, always answer in the form of a question!')
+            await message.channel.send(textwrap.dedent("""
+            List of commands: 
+            $load - Loads user data, use this to load your session
+            $ask - Asks a question, you only have 120 seconds to answer so be ready!
+            $winnings - Check your winnings, both lifetime and for the show
+            $dispute - If you think your answer should be correct, this will trigger a manual review
+            Tips:
+            If you don't know the answer, you can respond with skip or pass to move on
+            When answering a question with a number, type the number rather than the word
+            For example, use 10 rather than Ten
+            Remember, always answer in the form of a question!
+            """))
 
         # Debug
         if message.content.startswith('$test'):
-            await message.channel.send('Hello')
+            await message.channel.send("Hello")
 
 
 intents = discord.Intents.default()
