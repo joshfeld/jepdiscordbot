@@ -14,7 +14,8 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.u = None
+        self.u = {}
+        self.q = {}
 
     async def on_ready(self):
         print('Logged in as')
@@ -31,27 +32,27 @@ class MyClient(discord.Client):
         if message.content.startswith('$load'):
             try:
                 await message.channel.send('Loading new questions')
-                self.u = User(message.author.id, message.author.name)
-                self.u.get_record()
+                self.u[message.author.id] = User(message.author.id, message.author.name)
+                self.u[message.author.id].get_record()
             except:
                 await message.channel.send('Error loading clue data')
 
         # Asks the next question for the user, gathers the answer, then updates all info
         if message.content.startswith('$ask'):
-            if self.u is not None:
-                q = self.u.get_question
-                if q[3] == 'Final Jeopardy!':
-                    await message.channel.send(f'Final Jeopardy Category: ||{q[4]}||')
-                    await message.channel.send(f'Your current show winnings are: {self.u.show_winnings}')
-                    await message.channel.send('Place your wager now')
+            def check_wager(m):
+                return m.author == message.author
 
-                    def check_wager(m):
-                        return m.author == message.author
+            try:
+                self.q[message.author.id] = self.u[message.author.id].get_question
+                if self.q[message.author.id][3] == 'Final Jeopardy!':
+                    await message.channel.send(f'Final Jeopardy Category: ||{self.q[message.author.id][4]}||')
+                    await message.channel.send(f'Your current show winnings are: {self.u[message.author.id].show_winnings}')
+                    await message.channel.send('Place your wager now')
 
                     while True:
                         wager = await self.wait_for('message', check=check_wager)
                         try:
-                            if 0 <= int(wager.content) <= max(int(self.u.show_winnings), 1000):
+                            if 0 <= int(wager.content) <= max(int(self.u[message.author.id].show_winnings), 1000):
                                 break
                             else:
                                 await message.channel.send('Invalid wager, try again')
@@ -61,67 +62,72 @@ class MyClient(discord.Client):
                     await message.channel.send('Your Final Jeopardy clue:')
 
                 else:
-                    await message.channel.send(f'Category: ||{q[4]}||')
-                    await message.channel.send(f'Dollar amount: {q[5]}')
-                    winnings = int(q[5].replace('$', '').replace(',', ''))
+                    await message.channel.send(f'Category: ||{self.q[message.author.id][4]}||')
+                    await message.channel.send(f'Dollar amount: {self.q[message.author.id][5]}')
+                    winnings = int(self.q[message.author.id][5].replace('$', '').replace(',', ''))
 
                 # The question being asked here
-                await message.channel.send(f'||{q[6]}||')
+                await message.channel.send(f'||{self.q[message.author.id][6]}||')
 
                 # Setting the correct answer, then taking the guess and comparing
-                answer = q[7]
+                answer = self.q[message.author.id][7]
                 try:
                     await asyncio.sleep(0.5)
-                    guess = await self.wait_for('message', timeout=120.0)
+                    guess = await self.wait_for('message', timeout=120.0, check=check_wager)
                     await asyncio.sleep(0.5)
                     await message.channel.purge(limit=1)
                 except asyncio.TimeoutError:
-                    if q[3] != 'Final Jeopardy!':
-                        self.u.update_record(question=q[6], answer=answer, guess="No guess", clue_id=q[0], show_id=q[1],
-                                             jep_round=q[3], cash=0)
+                    if self.q[message.author.id][3] != 'Final Jeopardy!':
+                        self.u[message.author.id].update_record(question=self.q[message.author.id][6], answer=answer, guess="No guess",
+                                                                clue_id=self.q[message.author.id][0], show_id=self.q[message.author.id][1],
+                                                                jep_round=self.q[message.author.id][3], cash=0)
                     else:
-                        self.u.update_record(question=q[6], answer=answer, guess="No guess", clue_id=q[0], show_id=q[1],
-                                             jep_round=q[3], cash=-winnings)
+                        self.u[message.author.id].update_record(question=self.q[message.author.id][6], answer=answer, guess="No guess",
+                                                                clue_id=self.q[message.author.id][0], show_id=self.q[message.author.id][1],
+                                                                jep_round=self.q[message.author.id][3], cash=-winnings)
                     return await message.channel.send(f"Time's up, the correct answer is ||{answer}||")
 
                 # Allow user to skip the question for no gain or loss without waiting the 2 minutes
-                if guess.content in ['skip', 'pass'] and q[3] != 'Final Jeopardy!':
-                    self.u.update_record(question=q[6], answer=answer, guess="No guess", clue_id=q[0], show_id=q[1],
-                                         jep_round=q[3], cash=0)
+                if guess.content in ['skip', 'pass', '$skip', '$pass'] and self.q[message.author.id][3] != 'Final Jeopardy!':
+                    self.u[message.author.id].update_record(question=self.q[message.author.id][6], answer=answer, guess="No guess",
+                                                            clue_id=self.q[message.author.id][0], show_id=self.q[message.author.id][1],
+                                                            jep_round=self.q[message.author.id][3], cash=0)
                     return await message.channel.send(f"Question skipped, the correct answer is ||{answer}||")
                 else:
                     result = check_answer.validation(guess.content, answer)
 
                     if result:
                         await message.channel.send('Correct!')
-                        self.u.update_record(question=q[6], answer=answer, guess=guess.content, clue_id=q[0], show_id=q[1],
-                                             jep_round=q[3], cash=winnings)
+                        self.u[message.author.id].update_record(question=self.q[message.author.id][6], answer=answer, guess=guess.content,
+                                                                clue_id=self.q[message.author.id][0], show_id=self.q[message.author.id][1],
+                                                                jep_round=self.q[message.author.id][3], cash=winnings)
                     else:
                         await message.channel.send(f'Wrong, the correct answer is ||{answer}||')
-                        self.u.update_record(question=q[6], answer=answer, guess=guess.content, clue_id=q[0], show_id=q[1],
-                                             jep_round=q[3], cash=-winnings)
+                        self.u[message.author.id].update_record(question=self.q[message.author.id][6], answer=answer, guess=guess.content,
+                                                                clue_id=self.q[message.author.id][0], show_id=self.q[message.author.id][1],
+                                                                jep_round=self.q[message.author.id][3], cash=-winnings)
 
-            else:
+            except KeyError:
                 await message.channel.send('Please use $load to load your user data first')
 
         # Allows the user to check their winnings
         if message.content.startswith('$winnings'):
-            if self.u is not None:
-                await message.channel.send(f'Total lifetime winnings for {self.u.discord_name}: {self.u.winnings}')
-                await message.channel.send(f'Current show winnings for {self.u.discord_name}: {self.u.show_winnings}')
-            else:
+            try:
+                await message.channel.send(f'Total lifetime winnings for {self.u[message.author.id].discord_name}: {self.u[message.author.id].winnings}')
+                await message.channel.send(f'Current show winnings for {self.u[message.author.id].discord_name}: {self.u[message.author.id].show_winnings}')
+            except KeyError:
                 await message.channel.send('Please use $load to load your user data first')
 
         # Sends me a DM if a user disputes their answer
         if message.content.startswith('$dispute'):
-            if self.u is not None:
+            try:
                 try:
                     await message.channel.send('Your last response will be sent for manual review')
                     await client.get_user(261512986949058560).send(f'Clue disputed by {message.author.name} - '
-                                                                   f'clue id {self.u.day - 1}')
+                                                                   f'clue id {self.u[message.author.id].day - 1}')
                 except:
                     await message.channel.send("Looks like you've got nothing to dispute")
-            else:
+            except KeyError:
                 await message.channel.send('Please use $load to load your user data first')
 
         # Lists all commands
