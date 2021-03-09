@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 import check_answer
 from user import User
+from leaderboard import show_leaderboard
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -42,6 +43,7 @@ class MyClient(discord.Client):
             def check_wager(m):
                 return m.author == message.author
 
+            # if Final Jeopardy clue, get wager
             try:
                 self.q[message.author.id] = self.u[message.author.id].get_question
                 if self.q[message.author.id][3] == 'Final Jeopardy!':
@@ -61,6 +63,7 @@ class MyClient(discord.Client):
                     winnings = int(wager.content)
                     await message.channel.send('Your Final Jeopardy clue:')
 
+                # For non-Final Jeopardy clues, display the category and dollar amount
                 else:
                     await message.channel.send(f'Category: ||{self.q[message.author.id][4]}||')
                     await message.channel.send(f'Dollar amount: {self.q[message.author.id][5]}')
@@ -93,6 +96,8 @@ class MyClient(discord.Client):
                                                             clue_id=self.q[message.author.id][0], show_id=self.q[message.author.id][1],
                                                             jep_round=self.q[message.author.id][3], cash=0)
                     return await message.channel.send(f"Question skipped, the correct answer is ||{answer}||")
+
+                # Answer validation if answered and not skipped
                 else:
                     result = check_answer.validation(guess.content, answer)
 
@@ -118,6 +123,15 @@ class MyClient(discord.Client):
             except KeyError:
                 await message.channel.send('Please use $load to load your user data first')
 
+        if message.content.startswith('$show'):
+            try:
+                await message.channel.send(f"""```{show_leaderboard(self.u[message.author.id].get_user_id, 
+                                                                    message.content.split(' ')[1])}```""")
+            except IndexError:
+                await message.channel.send(f"""```{show_leaderboard(self.u[message.author.id].get_user_id)}```""")
+            except KeyError:
+                await message.channel.send('Please use $load to load your user data first')
+
         # Sends me a DM if a user disputes their answer
         if message.content.startswith('$dispute'):
             try:
@@ -137,6 +151,7 @@ class MyClient(discord.Client):
             $load - Loads user data, use this to load your session
             $ask - Asks a question, you only have 120 seconds to answer so be ready!
             $winnings - Check your winnings, both lifetime and for the show
+            $show # - Check leaderboard for a specific show number. Leave blank for your most recent show.
             $dispute - If you think your answer should be correct, this will trigger a manual review
             Tips:
             If you don't know the answer, you can respond with skip or pass to move on
