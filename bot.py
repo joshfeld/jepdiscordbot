@@ -112,6 +112,10 @@ class MyClient(discord.Client):
                                                                 clue_id=self.q[message.author.id][0], show_id=self.q[message.author.id][1],
                                                                 jep_round=self.q[message.author.id][3], cash=-winnings)
 
+                if self.q[message.author.id][3] == 'Final Jeopardy!':
+                    await message.channel.send("Show complete, here's how you did: ")
+                    await message.channel.send(f"""```{show_leaderboard(self.u[message.author.id].get_user_id)}```""")
+
             except KeyError:
                 await message.channel.send('Please use $load to load your user data first')
 
