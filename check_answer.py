@@ -1,12 +1,12 @@
 from fuzzywuzzy import fuzz
 
 
-def validation(g, a):
+def validation(g, a, r):
     while g:
         g = str(g).lower()
         a = str(a).lower()
         g, a = clean_chars(g, a)
-        g = check_prefix(g)
+        g, warn = check_prefix(g, r)
         a = split_answer(a)
         if not final_check(g, a):
             return False
@@ -14,12 +14,15 @@ def validation(g, a):
     return False
 
 
-def check_prefix(g):
+def check_prefix(g, r):
     prefix = ['what is ', 'who is ', 'where is ', 'what are ', 'who are ', 'where are ']
     for ans in prefix:
         if g.lower().startswith(ans):
-            return g.replace(ans, '')
-    return False
+            return g.replace(ans, ''), False
+    if r == 'Jeopardy!':
+        return g, True
+    else:
+        return False, False
 
 
 def clean_chars(g, a):

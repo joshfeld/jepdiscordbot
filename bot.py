@@ -99,10 +99,13 @@ class MyClient(discord.Client):
 
                 # Answer validation if answered and not skipped
                 else:
-                    result = check_answer.validation(guess.content, answer)
+                    result = check_answer.validation(guess.content, answer, self.q[message.author.id][3])
 
                     if result:
                         await message.channel.send('Correct!')
+                        r, warn = check_answer.check_prefix(guess.content, self.q[message.author.id][3])
+                        if warn:
+                            await message.channel.send('You did not answer in the form of a question, this is only allowed in the Jeopardy! round')
                         self.u[message.author.id].update_record(question=self.q[message.author.id][6], answer=answer, guess=guess.content,
                                                                 clue_id=self.q[message.author.id][0], show_id=self.q[message.author.id][1],
                                                                 jep_round=self.q[message.author.id][3], cash=winnings)
