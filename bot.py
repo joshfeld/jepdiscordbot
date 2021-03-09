@@ -151,6 +151,21 @@ class MyClient(discord.Client):
             except KeyError:
                 await message.channel.send('Please use $load to load your user data first')
 
+        # Check best/worst show
+        if message.content.startswith('$best'):
+            try:
+                await message.channel.send(f"""```{self.u[message.author.id].best_show}```""")
+
+            except KeyError:
+                await message.channel.send('Please use $load to load your user data first')
+
+        if message.content.startswith('$worst'):
+            try:
+                await message.channel.send(f"""```{self.u[message.author.id].worst_show}```""")
+
+            except KeyError:
+                await message.channel.send('Please use $load to load your user data first')
+
         # Sends me a DM if a user disputes their answer
         if message.content.startswith('$dispute'):
             try:
@@ -172,6 +187,8 @@ class MyClient(discord.Client):
             $winnings - Check your winnings, both lifetime and for the show
             $show # - Check leaderboard for a specific show number. Leave blank for your most recent show.
             $recent # - Get table of recent # answers
+            $best - Check your best show
+            $worst - Check your worst show
             $dispute - If you think your answer should be correct, this will trigger a manual review
             Tips:
             If you don't know the answer, you can respond with skip or pass to move on

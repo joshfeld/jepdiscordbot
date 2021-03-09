@@ -1,4 +1,5 @@
 import sqlite3
+import pandas as pd
 
 
 class User:
@@ -76,19 +77,23 @@ class User:
     @property
     def best_show(self):
         with sqlite3.connect('jepbot.db') as conn:
-            winnings = list(conn.cursor().execute(f"SELECT * FROM show WHERE user_id = {self.get_user_id}").fetchall()[0])
-            if winnings:
-                best = max(winnings)
-            else:
-                best = "No shows completed"
-        return best
+            winnings = conn.cursor().execute(f"""SELECT show_id, amount_won FROM show 
+                                                WHERE user_id = {self.get_user_id} ORDER BY amount_won DESC LIMIT 1""")
+
+        df = pd.DataFrame(winnings.fetchall(), columns=['Show', 'Amount Won']).set_index('Show')
+        if df.empty:
+            return 'No shows completed'
+        else:
+            return df
 
     @property
     def worst_show(self):
         with sqlite3.connect('jepbot.db') as conn:
-            winnings = list(conn.cursor().execute(f"SELECT * FROM show WHERE user_id = {self.get_user_id}").fetchall()[0])
-            if winnings:
-                worst = min(winnings)
-            else:
-                worst = "No shows completed"
-        return worst
+            winnings = conn.cursor().execute(f"""SELECT show_id, amount_won FROM show 
+                                                WHERE user_id = {self.get_user_id} ORDER BY amount_won LIMIT 1""")
+
+        df = pd.DataFrame(winnings.fetchall(), columns=['Show', 'Amount Won']).set_index('Show')
+        if df.empty:
+            return 'No shows completed'
+        else:
+            return df
