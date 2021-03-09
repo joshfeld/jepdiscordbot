@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 import check_answer
 from user import User
-from leaderboard import show_leaderboard
+from leaderboard import show_leaderboard, recent_answers
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -130,12 +130,24 @@ class MyClient(discord.Client):
             except KeyError:
                 await message.channel.send('Please use $load to load your user data first')
 
+        # Check a show leaderboard, add number after $show to display a specific show
         if message.content.startswith('$show'):
             try:
                 await message.channel.send(f"""```{show_leaderboard(self.u[message.author.id].get_user_id, 
                                                                     message.content.split(' ')[1])}```""")
             except IndexError:
                 await message.channel.send(f"""```{show_leaderboard(self.u[message.author.id].get_user_id)}```""")
+            except KeyError:
+                await message.channel.send('Please use $load to load your user data first')
+
+        # Check recent answers, add number after $recent to display that many
+        if message.content.startswith('$recent'):
+            try:
+                await client.get_user(message.author.id).send(f"""```{recent_answers(self.u[message.author.id].get_user_id, 
+                                                                                     message.content.split(' ')[1])}```""")
+            except IndexError:
+                await client.get_user(message.author.id).send(
+                    f"""```{recent_answers(self.u[message.author.id].get_user_id)}```""")
             except KeyError:
                 await message.channel.send('Please use $load to load your user data first')
 
@@ -159,6 +171,7 @@ class MyClient(discord.Client):
             $ask - Asks a question, you only have 120 seconds to answer so be ready!
             $winnings - Check your winnings, both lifetime and for the show
             $show # - Check leaderboard for a specific show number. Leave blank for your most recent show.
+            $recent # - Get table of recent # answers
             $dispute - If you think your answer should be correct, this will trigger a manual review
             Tips:
             If you don't know the answer, you can respond with skip or pass to move on

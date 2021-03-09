@@ -29,3 +29,26 @@ def show_leaderboard(uid, show_num=0):
         return 'No data for that show'
     else:
         return df
+
+
+def recent_answers(uid, num=10):
+    try:
+        num = int(num)
+        if num > 10:
+            num = 10
+    except ValueError:
+        return 'Invalid number'
+    if num < 1:
+        return 'Invalid number'
+
+    with sqlite3.connect('jepbot.db') as conn:
+        cur = conn.cursor()
+
+        recent = cur.execute(f'''SELECT show_id, question, answer, guess, answered_correctly, winnings_change 
+                                FROM transactions WHERE user_id = {uid} ORDER BY transaction_id DESC LIMIT {num}''')
+
+    pd.set_option('max_columns', None)
+    pd.set_option('max_row', None)
+    df = pd.DataFrame(recent.fetchall(), columns=['Show', 'Question', 'Answer', 'Your Guess', 'Correct Guess?', 'Winnings Change'])
+
+    return df
