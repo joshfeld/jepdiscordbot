@@ -41,7 +41,7 @@ class MyClient(discord.Client):
         # Asks the next question for the user, gathers the answer, then updates all info
         if message.content.startswith('$ask'):
             def check_wager(m):
-                return m.author == message.author
+                return m.author == message.author and not message.content.startswith('$')
 
             # if Final Jeopardy clue, get wager
             try:
@@ -76,7 +76,7 @@ class MyClient(discord.Client):
                 answer = self.q[message.author.id][7]
                 try:
                     await asyncio.sleep(0.5)
-                    guess = await self.wait_for('message', timeout=120.0, check=check_wager)
+                    guess = await self.wait_for('message', timeout=30.0, check=check_wager)
                     await asyncio.sleep(0.5)
                     await message.channel.purge(limit=1)
                 except asyncio.TimeoutError:
@@ -186,7 +186,7 @@ class MyClient(discord.Client):
             $ask - Asks a question, you only have 120 seconds to answer so be ready!
             $winnings - Check your winnings, both lifetime and for the show
             $show # - Check leaderboard for a specific show number. Leave blank for your most recent show.
-            $recent # - Get table of recent # answers
+            $recent # - Get table of recent # answers (max of 10)
             $best - Check your best show
             $worst - Check your worst show
             $dispute - If you think your answer should be correct, this will trigger a manual review
