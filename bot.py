@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 import check_answer
 from user import User
-from leaderboard import show_leaderboard, recent_answers
+from leaderboard import show_leaderboard, recent_answers, lifetime_leaderboard
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -140,6 +140,10 @@ class MyClient(discord.Client):
             except KeyError:
                 await message.channel.send('Please use $load to load your user data first')
 
+        # Display lifetime winnings leaderboard
+        if message.content.startswith('$overall'):
+            await message.channel.send(f"""```{lifetime_leaderboard()}```""")
+
         # Check recent answers, add number after $recent to display that many
         if message.content.startswith('$recent'):
             try:
@@ -185,6 +189,7 @@ class MyClient(discord.Client):
             $load - Loads user data, use this to load your session
             $ask - Asks a question, you only have 120 seconds to answer so be ready!
             $winnings - Check your winnings, both lifetime and for the show
+            $overall - Check lifetime winnings of all players
             $show # - Check leaderboard for a specific show number. Leave blank for your most recent show.
             $recent # - Get table of recent # answers (max of 10)
             $best - Check your best show

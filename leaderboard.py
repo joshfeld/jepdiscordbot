@@ -2,6 +2,17 @@ import sqlite3
 import pandas as pd
 
 
+def lifetime_leaderboard():
+    with sqlite3.connect('jepbot.db') as conn:
+        cur = conn.cursor()
+
+        lb = cur.execute('''SELECT name, questions_answered, lifetime_winnings FROM user 
+                            ORDER BY lifetime_winnings DESC''')
+
+    df = pd.DataFrame(lb.fetchall(), columns=['Name', 'Questions Answered', 'Winnings']).set_index('Name')
+    return df
+
+
 def show_leaderboard(uid, show_num=0):
     try:
         show_num = int(show_num)
